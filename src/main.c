@@ -13,10 +13,20 @@
 /* STEP 2.1 - Declare the Company identifier (Company ID) */
 #define COMPANY_ID_CODE 0x0059
 
+typedef struct blitch_packet {
+	uint8_t id1;
+	uint8_t id2;
+	uint8_t pn;			// product number
+	uint8_t length;		// data length
+	uint8_t data;
+	uint8_t checksum;
+} blitch_packet_t;
+
 /* STEP 2.2 - Declare the structure for your custom data  */
 typedef struct adv_mfg_data {
 	uint16_t company_code; /* Company Identifier Code. */
-	uint16_t number_press; /* Number of times Button 1 is pressed */
+	// uint16_t number_press; /* Number of times Button 1 is pressed */
+	blitch_packet_t blitch_packet;
 } adv_mfg_data_type;
 
 #define USER_BUTTON DK_BTN1_MSK
@@ -29,7 +39,7 @@ static struct bt_le_adv_param *adv_param =
 			NULL); /* Set to NULL for undirected advertising */
 
 /* STEP 2.3 - Define and initialize a variable of type adv_mfg_data_type */
-static adv_mfg_data_type adv_mfg_data = { COMPANY_ID_CODE, 0x00 };
+static adv_mfg_data_type adv_mfg_data = { COMPANY_ID_CODE, {0x64, 0x74, 0x01, 0x01, 0x00, 0xFF}};
 
 static unsigned char url_data[] = { 0x17, '/', '/', 'a', 'c', 'a', 'd', 'e', 'm',
 				    'y',  '.', 'n', 'o', 'r', 'd', 'i', 'c', 's',
@@ -56,7 +66,7 @@ static const struct bt_data sd[] = {
 static void button_changed(uint32_t button_state, uint32_t has_changed)
 {
 	if (has_changed & button_state & USER_BUTTON) {
-		adv_mfg_data.number_press += 1;
+		adv_mfg_data.blitch_packet.data += 1;
 		bt_le_adv_update_data(ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	}
 }
@@ -73,7 +83,7 @@ static int init_button(void)
 	return err;
 }
 
-void main(void)
+int main(void)
 {
 	int blink_status = 0;
 	int err;
@@ -83,19 +93,19 @@ void main(void)
 	err = dk_leds_init();
 	if (err) {
 		LOG_ERR("LEDs init failed (err %d)\n", err);
-		return;
+		return err;
 	}
 	/* STEP 4.2 - Setup buttons on your board  */
 	err = init_button();
 	if (err) {
 		printk("Button init failed (err %d)\n", err);
-		return;
+		return err;
 	}
 
 	err = bt_enable(NULL);
 	if (err) {
 		LOG_ERR("Bluetooth init failed (err %d)\n", err);
-		return;
+		return err;
 	}
 
 	LOG_INF("Bluetooth initialized\n");
@@ -103,7 +113,7 @@ void main(void)
 	err = bt_le_adv_start(adv_param, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		LOG_ERR("Advertising failed to start (err %d)\n", err);
-		return;
+		return err;
 	}
 
 	LOG_INF("Advertising successfully started\n");
