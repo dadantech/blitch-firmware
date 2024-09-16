@@ -33,7 +33,8 @@ typedef struct adv_mfg_data {
 
 /* STEP 1 - Create an LE Advertising Parameters variable */
 static struct bt_le_adv_param *adv_param =
-	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_NONE, /* No options specified */
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_USE_IDENTITY  | 		// static address
+					BT_LE_ADV_OPT_CODED , 				// coded PHY (long range)
 			800, /* Min Advertising Interval 500ms (800*0.625ms) */
 			801, /* Max Advertising Interval 500.625ms (801*0.625ms) */
 			NULL); /* Set to NULL for undirected advertising */
@@ -41,10 +42,7 @@ static struct bt_le_adv_param *adv_param =
 /* STEP 2.3 - Define and initialize a variable of type adv_mfg_data_type */
 static adv_mfg_data_type adv_mfg_data = { COMPANY_ID_CODE, {0x64, 0x74, 0x01, 0x01, 0x00, 0xFF}};
 
-static unsigned char url_data[] = { 0x17, '/', '/', 'a', 'c', 'a', 'd', 'e', 'm',
-				    'y',  '.', 'n', 'o', 'r', 'd', 'i', 'c', 's',
-				    'e',  'm', 'i', '.', 'c', 'o', 'm' };
-LOG_MODULE_REGISTER(Lesson2_Exercise2, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
@@ -59,15 +57,13 @@ static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_MANUFACTURER_DATA, (unsigned char *)&adv_mfg_data, sizeof(adv_mfg_data)),
 };
 
-static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_URI, url_data, sizeof(url_data)),
-};
+
 /* STEP 5 - Add the definition of callback function and update the advertising data dynamically */
 static void button_changed(uint32_t button_state, uint32_t has_changed)
 {
 	if (has_changed & button_state & USER_BUTTON) {
 		adv_mfg_data.blitch_packet.data += 1;
-		bt_le_adv_update_data(ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+		bt_le_adv_update_data(ad, ARRAY_SIZE(ad), NULL, 0);
 	}
 }
 /* STEP 4.1 - Define the initialization function of the buttons and setup interrupt.  */
@@ -110,7 +106,7 @@ int main(void)
 
 	LOG_INF("Bluetooth initialized\n");
 
-	err = bt_le_adv_start(adv_param, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
+	err = bt_le_adv_start(adv_param, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		LOG_ERR("Advertising failed to start (err %d)\n", err);
 		return err;
