@@ -11,21 +11,17 @@
 #include <dk_buttons_and_leds.h>
 
 /* STEP 2.1 - Declare the Company identifier (Company ID) */
-#define COMPANY_ID_CODE 0x0059
+#define COMPANY_ID_CODE 0xfcd2
 
 typedef struct blitch_packet {
-	uint8_t id1;
-	uint8_t id2;
-	uint8_t pn;			// product number
-	uint8_t length;		// data length
-	uint8_t data;
-	uint8_t checksum;
+	uint8_t bthome_id;		// BTHome Device Information (0x40)
+	uint8_t id_button;		// event type - button (0x3a)
+	uint8_t button_event;	// 0 - no event, 1 - press
 } blitch_packet_t;
 
 /* STEP 2.2 - Declare the structure for your custom data  */
 typedef struct adv_mfg_data {
 	uint16_t company_code; /* Company Identifier Code. */
-	// uint16_t number_press; /* Number of times Button 1 is pressed */
 	blitch_packet_t blitch_packet;
 } adv_mfg_data_type;
 
@@ -40,7 +36,7 @@ static struct bt_le_adv_param *adv_param =
 			NULL); /* Set to NULL for undirected advertising */
 
 /* STEP 2.3 - Define and initialize a variable of type adv_mfg_data_type */
-static adv_mfg_data_type adv_mfg_data = { COMPANY_ID_CODE, {0x64, 0x74, 0x01, 0x01, 0x00, 0xFF}};
+static adv_mfg_data_type adv_mfg_data = { COMPANY_ID_CODE, {0x40, 0x3a, 0x00}};
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
@@ -54,15 +50,24 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
 	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
 	/* STEP 3 - Include the Manufacturer Specific Data in the advertising packet. */
-	BT_DATA(BT_DATA_MANUFACTURER_DATA, (unsigned char *)&adv_mfg_data, sizeof(adv_mfg_data)),
+	// BT_DATA(BT_DATA_MANUFACTURER_DATA, (unsigned char *)&adv_mfg_data, sizeof(adv_mfg_data)),
+	BT_DATA(BT_DATA_SVC_DATA16, (unsigned char *)&adv_mfg_data, sizeof(adv_mfg_data)),
 };
 
 
 /* STEP 5 - Add the definition of callback function and update the advertising data dynamically */
 static void button_changed(uint32_t button_state, uint32_t has_changed)
 {
-	if (has_changed & button_state & USER_BUTTON) {
-		adv_mfg_data.blitch_packet.data += 1;
+	if (has_changed & USER_BUTTON) {
+		if (button_state)
+		{
+			adv_mfg_data.blitch_packet.button_event = 0x01;
+		}
+		else
+		{
+			adv_mfg_data.blitch_packet.button_event = 0x00;
+		}
+
 		bt_le_adv_update_data(ad, ARRAY_SIZE(ad), NULL, 0);
 	}
 }
