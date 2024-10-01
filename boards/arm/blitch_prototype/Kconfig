@@ -1,0 +1,7 @@
+# BC805M prototype board configuration
+
+config BOARD_ENABLE_DCDC
+	bool "DCDC mode"
+	select SOC_DCDC_NRF52X
+	default y
+	depends on BOARD_BLITCH_PROTOTYPE
