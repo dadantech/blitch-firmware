@@ -14,9 +14,11 @@
 #define COMPANY_ID_CODE 0xfcd2
 
 typedef struct blitch_packet {
-	uint8_t bthome_id;		// BTHome Device Information (0x40)
-	uint8_t id_button;		// event type - button (0x3a)
-	uint8_t button_event;	// 0 - no event, 1 - press
+	uint8_t bthome_id;			// BTHome Device Information (0x40)
+	uint8_t packet_id_type;		// (0x00)
+	uint8_t packet_id;			// packet counter to filter duplicate events
+	uint8_t button_id_type;		// event type - button (0x3a)
+	uint8_t button_event;		// 0 - no event, 1 - press
 } blitch_packet_t;
 
 /* STEP 2.2 - Declare the structure for your custom data  */
@@ -36,7 +38,7 @@ static struct bt_le_adv_param *adv_param =
 			NULL); /* Set to NULL for undirected advertising */
 
 /* STEP 2.3 - Define and initialize a variable of type adv_mfg_data_type */
-static adv_mfg_data_type adv_mfg_data = { COMPANY_ID_CODE, {0x40, 0x3a, 0x00}};
+static adv_mfg_data_type adv_mfg_data = { COMPANY_ID_CODE, {0x40, 0x00, 0x00, 0x3a, 0x00}};
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
@@ -68,7 +70,10 @@ static void button_changed(uint32_t button_state, uint32_t has_changed)
 			adv_mfg_data.blitch_packet.button_event = 0x00;
 		}
 
+		++adv_mfg_data.blitch_packet.packet_id;
+
 		bt_le_adv_update_data(ad, ARRAY_SIZE(ad), NULL, 0);
+		k_msleep(1000);
 	}
 }
 /* STEP 4.1 - Define the initialization function of the buttons and setup interrupt.  */
