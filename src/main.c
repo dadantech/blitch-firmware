@@ -60,20 +60,15 @@ static const struct bt_data ad[] = {
 /* STEP 5 - Add the definition of callback function and update the advertising data dynamically */
 static void button_changed(uint32_t button_state, uint32_t has_changed)
 {
-	if (has_changed & USER_BUTTON) {
-		if (button_state)
+	if (has_changed & USER_BUTTON) 
+	{
+		if (button_state)			// !button_state for NC buttons
 		{
-			adv_mfg_data.blitch_packet.button_event = 0x01;
-		}
-		else
-		{
-			adv_mfg_data.blitch_packet.button_event = 0x00;
-		}
+			adv_mfg_data.blitch_packet.button_event = 0x01;			// always send button press event but with every press increment packet id
+			++adv_mfg_data.blitch_packet.packet_id;
 
-		++adv_mfg_data.blitch_packet.packet_id;
-
-		bt_le_adv_update_data(ad, ARRAY_SIZE(ad), NULL, 0);
-		k_msleep(1000);
+			bt_le_adv_update_data(ad, ARRAY_SIZE(ad), NULL, 0);
+		}
 	}
 }
 /* STEP 4.1 - Define the initialization function of the buttons and setup interrupt.  */
