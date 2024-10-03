@@ -9,6 +9,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gap.h>
 #include <dk_buttons_and_leds.h>
+#include "bthome.h"
 
 /* STEP 2.1 - Declare the Company identifier (Company ID) */
 #define COMPANY_ID_CODE 0xfcd2
@@ -17,8 +18,15 @@ typedef struct blitch_packet {
 	uint8_t bthome_id;			// BTHome Device Information (0x40)
 	uint8_t packet_id_type;		// (0x00)
 	uint8_t packet_id;			// packet counter to filter duplicate events
-	uint8_t button_id_type;		// event type - button (0x3a)
-	uint8_t button_event;		// 0 - no event, 1 - press
+	uint8_t button1_id_type;	// event type - button (0x3a)
+	uint8_t button1_event;		// 0 - no event, 1 - press
+	uint8_t button2_id_type;	// event type - button (0x3a)
+	uint8_t button2_event;		// 0 - no event, 1 - press
+	uint8_t button3_id_type;	// event type - button (0x3a)
+	uint8_t button3_event;		// 0 - no event, 1 - press
+	uint8_t button4_id_type;	// event type - button (0x3a)
+	uint8_t button4_event;		// 0 - no event, 1 - press
+
 } blitch_packet_t;
 
 /* STEP 2.2 - Declare the structure for your custom data  */
@@ -27,7 +35,7 @@ typedef struct adv_mfg_data {
 	blitch_packet_t blitch_packet;
 } adv_mfg_data_type;
 
-#define USER_BUTTON DK_BTN1_MSK
+#define USER_BUTTONS (DK_BTN1_MSK | DK_BTN2_MSK | DK_BTN3_MSK | DK_BTN4_MSK)
 
 /* STEP 1 - Create an LE Advertising Parameters variable */
 static struct bt_le_adv_param *adv_param =
@@ -38,7 +46,19 @@ static struct bt_le_adv_param *adv_param =
 			NULL); /* Set to NULL for undirected advertising */
 
 /* STEP 2.3 - Define and initialize a variable of type adv_mfg_data_type */
-static adv_mfg_data_type adv_mfg_data = { COMPANY_ID_CODE, {0x40, 0x00, 0x00, 0x3a, 0x00}};
+static adv_mfg_data_type adv_mfg_data = { COMPANY_ID_CODE, {
+											.bthome_id = 0x40,
+											.packet_id_type = BTHOME_PACKET_ID,
+											.packet_id = 0,
+											.button1_id_type = BTHOME_EVENT_TYPE_BUTTON,
+											.button1_event = 0,
+											.button2_id_type = BTHOME_EVENT_TYPE_BUTTON,
+											.button2_event = 0,
+											.button3_id_type = BTHOME_EVENT_TYPE_BUTTON,
+											.button3_event = 0,
+											.button4_id_type = BTHOME_EVENT_TYPE_BUTTON,
+											.button4_event = 0,
+											}};
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
@@ -60,11 +80,18 @@ static const struct bt_data ad[] = {
 /* STEP 5 - Add the definition of callback function and update the advertising data dynamically */
 static void button_changed(uint32_t button_state, uint32_t has_changed)
 {
-	if (has_changed & USER_BUTTON) 
+	if (has_changed & USER_BUTTONS) 
 	{
-		if (button_state)			// !button_state for NC buttons
+		
+
+		if (button_state)		// if any button is pressed
 		{
-			adv_mfg_data.blitch_packet.button_event = 0x01;			// always send button press event but with every press increment packet id
+			adv_mfg_data.blitch_packet.button1_event = button_state & DK_BTN1_MSK ? BTHOME_EVENT_BUTTON_PRESS : BTHOME_EVENT_BUTTON_NONE;
+			adv_mfg_data.blitch_packet.button2_event = button_state & DK_BTN2_MSK ? BTHOME_EVENT_BUTTON_PRESS : BTHOME_EVENT_BUTTON_NONE;
+			adv_mfg_data.blitch_packet.button3_event = button_state & DK_BTN3_MSK ? BTHOME_EVENT_BUTTON_PRESS : BTHOME_EVENT_BUTTON_NONE;
+			adv_mfg_data.blitch_packet.button4_event = button_state & DK_BTN4_MSK ? BTHOME_EVENT_BUTTON_PRESS : BTHOME_EVENT_BUTTON_NONE;
+
+			// adv_mfg_data.blitch_packet.button1_event = 0x01;			// always send button press event but with every press increment packet id
 			++adv_mfg_data.blitch_packet.packet_id;
 
 			bt_le_adv_update_data(ad, ARRAY_SIZE(ad), NULL, 0);
@@ -120,7 +147,7 @@ int main(void)
 	LOG_INF("Advertising successfully started\n");
 
 	for (;;) {
-		dk_set_led(RUN_STATUS_LED, (++blink_status) % 2);
+		// dk_set_led(RUN_STATUS_LED, (++blink_status) % 2);
 		k_sleep(K_MSEC(RUN_LED_BLINK_INTERVAL));
 	}
 }
