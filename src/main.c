@@ -1,9 +1,3 @@
-/*
- * Copyright (c) 2023 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
- */
-
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -11,8 +5,14 @@
 #include <dk_buttons_and_leds.h>
 #include "bthome.h"
 
-/* STEP 2.1 - Declare the Company identifier (Company ID) */
 #define COMPANY_ID_CODE 0xfcd2
+#define ADV_TIMEOUT_MS	5000
+
+void adv_timer_handler(struct k_timer *timer);
+void my_work_handler(struct k_work *work);
+
+K_TIMER_DEFINE(adv_timer, adv_timer_handler, NULL);
+K_WORK_DEFINE(my_work, my_work_handler);
 
 typedef struct blitch_packet {
 	uint8_t bthome_id;			// BTHome Device Information (0x40)
@@ -29,7 +29,7 @@ typedef struct blitch_packet {
 
 } blitch_packet_t;
 
-/* STEP 2.2 - Declare the structure for your custom data  */
+/* Declare the structure for your custom data  */
 typedef struct adv_mfg_data {
 	uint16_t company_code; /* Company Identifier Code. */
 	blitch_packet_t blitch_packet;
@@ -37,15 +37,15 @@ typedef struct adv_mfg_data {
 
 #define USER_BUTTONS (DK_BTN1_MSK | DK_BTN2_MSK | DK_BTN3_MSK | DK_BTN4_MSK)
 
-/* STEP 1 - Create an LE Advertising Parameters variable */
+/* Create an LE Advertising Parameters variable */
 static struct bt_le_adv_param *adv_param =
 	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_USE_IDENTITY  | 		// static address
 					BT_LE_ADV_OPT_CODED , 				// coded PHY (long range)
-			800, /* Min Advertising Interval 500ms (800*0.625ms) */
-			801, /* Max Advertising Interval 500.625ms (801*0.625ms) */
+			100, /* Min Advertising Interval 100ms (100*0.625ms) */
+			101, /* Max Advertising Interval 100.625ms (101*0.625ms) */
 			NULL); /* Set to NULL for undirected advertising */
 
-/* STEP 2.3 - Define and initialize a variable of type adv_mfg_data_type */
+/* Define and initialize a variable of type adv_mfg_data_type */
 static adv_mfg_data_type adv_mfg_data = { COMPANY_ID_CODE, {
 											.bthome_id = 0x40,
 											.packet_id_type = BTHOME_PACKET_ID,
@@ -71,34 +71,55 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
 	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
-	/* STEP 3 - Include the Manufacturer Specific Data in the advertising packet. */
+	/* Include the Manufacturer Specific Data in the advertising packet. */
 	// BT_DATA(BT_DATA_MANUFACTURER_DATA, (unsigned char *)&adv_mfg_data, sizeof(adv_mfg_data)),
 	BT_DATA(BT_DATA_SVC_DATA16, (unsigned char *)&adv_mfg_data, sizeof(adv_mfg_data)),
 };
 
+static void start_adv_timeout_timer(void)
+{
+	k_timer_start(&adv_timer, K_MSEC(ADV_TIMEOUT_MS), K_NO_WAIT);
+}
 
-/* STEP 5 - Add the definition of callback function and update the advertising data dynamically */
+void adv_timer_handler(struct k_timer *timer)
+{
+	LOG_INF("Timer expired, calling work queue");
+	k_work_submit(&my_work);
+}
+
+void my_work_handler(struct k_work *work)
+{
+	LOG_INF("Disabling BLE advertising");
+	bt_le_adv_stop();
+}
+
+/* Add the definition of callback function and update the advertising data dynamically */
 static void button_changed(uint32_t button_state, uint32_t has_changed)
 {
 	if (has_changed & USER_BUTTONS) 
 	{
-		
-
 		if (button_state)		// if any button is pressed
 		{
+			bt_le_adv_stop();
+
+			LOG_INF("Button pressed - state: 0x%04x", button_state);
+
 			adv_mfg_data.blitch_packet.button1_event = button_state & DK_BTN1_MSK ? BTHOME_EVENT_BUTTON_PRESS : BTHOME_EVENT_BUTTON_NONE;
 			adv_mfg_data.blitch_packet.button2_event = button_state & DK_BTN2_MSK ? BTHOME_EVENT_BUTTON_PRESS : BTHOME_EVENT_BUTTON_NONE;
 			adv_mfg_data.blitch_packet.button3_event = button_state & DK_BTN3_MSK ? BTHOME_EVENT_BUTTON_PRESS : BTHOME_EVENT_BUTTON_NONE;
 			adv_mfg_data.blitch_packet.button4_event = button_state & DK_BTN4_MSK ? BTHOME_EVENT_BUTTON_PRESS : BTHOME_EVENT_BUTTON_NONE;
 
+			start_adv_timeout_timer();
+
 			// adv_mfg_data.blitch_packet.button1_event = 0x01;			// always send button press event but with every press increment packet id
 			++adv_mfg_data.blitch_packet.packet_id;
 
-			bt_le_adv_update_data(ad, ARRAY_SIZE(ad), NULL, 0);
+			// bt_le_adv_update_data(ad, ARRAY_SIZE(ad), NULL, 0);
+			bt_le_adv_start(adv_param, ad, ARRAY_SIZE(ad), NULL, 0);
 		}
 	}
 }
-/* STEP 4.1 - Define the initialization function of the buttons and setup interrupt.  */
+/* Define the initialization function of the buttons and setup interrupt.  */
 static int init_button(void)
 {
 	int err;
@@ -113,7 +134,6 @@ static int init_button(void)
 
 int main(void)
 {
-	int blink_status = 0;
 	int err;
 
 	LOG_INF("Starting Lesson 2 - Exercise 2 \n");
@@ -123,7 +143,7 @@ int main(void)
 		LOG_ERR("LEDs init failed (err %d)\n", err);
 		return err;
 	}
-	/* STEP 4.2 - Setup buttons on your board  */
+	/* Setup buttons on your board  */
 	err = init_button();
 	if (err) {
 		printk("Button init failed (err %d)\n", err);
@@ -146,8 +166,9 @@ int main(void)
 
 	LOG_INF("Advertising successfully started\n");
 
+	start_adv_timeout_timer();
+
 	for (;;) {
-		// dk_set_led(RUN_STATUS_LED, (++blink_status) % 2);
-		k_sleep(K_MSEC(RUN_LED_BLINK_INTERVAL));
+		k_sleep(K_FOREVER);
 	}
 }
