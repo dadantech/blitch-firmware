@@ -8,6 +8,10 @@
 	model = "Blitch prototype";
 	compatible = "dadantech,blitch-prototype";
 
+	zephyr,user {
+		io-channels = <&adc 0>;
+	};
+	
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -81,6 +85,20 @@
 			label = "storage";
 			reg = <0x2a000 0x6000>;
 		};
+	};
+};
+
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_VDD >;
+		zephyr,resolution = <12>;
 	};
 };
 
