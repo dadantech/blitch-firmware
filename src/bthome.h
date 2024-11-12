@@ -5,7 +5,8 @@
 #define BTHOME_PACKET_ID                        0x00
 
 // Sensor data
-#define BTHOME_SENSOR_TEMPERATURE_SINT8         0x57
+#define BTHOME_SENSOR_BATTERY                   0x01        // uint8_t [%]
+#define BTHOME_SENSOR_TEMPERATURE_SINT8         0x57        // sint8_t [degC]
 
 // Binary Sensor data
 #define BTHOME_SENSOR_BIN_VIBRATION             0x2C        // 0 (False = Clear) 1 (True = Detected)
