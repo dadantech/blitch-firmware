@@ -216,7 +216,9 @@ static int get_battery_voltage(uint32_t *voltage_mv)
 		return err;
 	}
 
-	battery_voltage_mv = adc_buf;
+	// to prevent the battery voltage from becoming negative number
+	battery_voltage_mv = adc_buf > 0 ? adc_buf : 0;
+
 	err = adc_raw_to_millivolts_dt(&adc_channel, &battery_voltage_mv);
 	if (err < 0)
 	{
