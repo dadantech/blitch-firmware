@@ -62,7 +62,7 @@ static struct bt_le_adv_param *adv_param =
 
 /* Define and initialize a variable of type adv_mfg_data_type */
 static adv_mfg_data_type adv_mfg_data = { COMPANY_ID_CODE, {
-											.bthome_id = BTHOME_PACKET_TYPE,
+											.bthome_id = BTHOME_DEVICE_PACKET_V2 | BTHOME_DEVICE_ADV_IRREGULAR | BTHOME_DEVICE_ENCRYPTION_OFF,
 											.packet_id_type = BTHOME_PACKET_ID,
 											.packet_id = 0,
 											.battery_id_type = BTHOME_SENSOR_BATTERY,

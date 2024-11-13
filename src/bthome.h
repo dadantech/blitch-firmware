@@ -2,6 +2,13 @@
 #define SRC_BTHOME
 
 #define BTHOME_PACKET_TYPE                      0x40
+
+#define BTHOME_DEVICE_PACKET_V2                 0x40
+#define BTHOME_DEVICE_ADV_REGULAR               0x00        // device is sending BLE advertisements at a regular interval
+#define BTHOME_DEVICE_ADV_IRREGULAR             0x04        // device is sending BLE advertisements at a irregular interval (e.g. only when someone pushes a button)
+#define BTHOME_DEVICE_ENCRYPTION_ON             0x01
+#define BTHOME_DEVICE_ENCRYPTION_OFF            0x00
+
 #define BTHOME_PACKET_ID                        0x00
 
 // Sensor data
