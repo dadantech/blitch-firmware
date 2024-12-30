@@ -275,18 +275,18 @@ int main(void)
 
 	LOG_INF("BThome Buttons\n");
 
-	err = dk_leds_init();
-	if (err) {
-		LOG_ERR("LEDs init failed (err %d)\n", err);
-		return err;
-	}
+	// err = dk_leds_init();
+	// if (err) {
+	// 	LOG_ERR("LEDs init failed (err %d)\n", err);
+	// 	return err;
+	// }
 
 	/* Setup buttons on your board  */
-	err = init_button();
-	if (err) {
-		printk("Button init failed (err %d)\n", err);
-		return err;
-	}
+	// err = init_button();
+	// if (err) {
+	// 	printk("Button init failed (err %d)\n", err);
+	// 	return err;
+	// }
 
 	// Setup ADC
 	err = init_adc();

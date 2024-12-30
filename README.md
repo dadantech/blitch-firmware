@@ -1,5 +1,11 @@
-# blitch-firmware
-Bluetooth switch firmware
+# Agora BLE buttons (blitch)
+Firmware for Bluetooth buttons with BThome protocol. Works with Home Assistant.
+
+## Harware
+https://github.com/dadantech/blitch-hardware
+
+## Shop
+It is for sale on Tindie: https://www.tindie.com/products/dadantech/agora-ble-buttons/
 
 # Data format
 https://bthome.io/format/
