@@ -1,8 +1,12 @@
 # Agora BLE buttons (blitch)
+![alt text](agora_buttons.jpg "Agora buttons")  
 Firmware for Bluetooth buttons with BThome protocol. Works with Home Assistant.
 
 ## Harware
 https://github.com/dadantech/blitch-hardware
+
+## 3D models
+https://www.thingiverse.com/thing:6855799
 
 ## Shop
 It is for sale on Tindie: https://www.tindie.com/products/dadantech/agora-ble-buttons/
