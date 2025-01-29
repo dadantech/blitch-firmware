@@ -282,11 +282,11 @@ int main(void)
 	// }
 
 	/* Setup buttons on your board  */
-	// err = init_button();
-	// if (err) {
-	// 	printk("Button init failed (err %d)\n", err);
-	// 	return err;
-	// }
+	err = init_button();
+	if (err) {
+		printk("Button init failed (err %d)\n", err);
+		return err;
+	}
 
 	// Setup ADC
 	err = init_adc();
